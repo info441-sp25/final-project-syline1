@@ -9,7 +9,7 @@ const authConfig = {
     auth: {
    	clientId: "3a10cefa-4921-42e0-a946-6dfeb05857d1",
     	authority: "https://login.microsoftonline.com/f6b6dd5b-f02f-441a-99a0-162ac5060bd2",
-    	clientSecret: "nhU8Q~97jEDJrilV7AkbSGfX4N.ay4-wLOKXJb8F",
+    	clientSecret: "",
     	redirectUri: "/redirect"
     },
 	system: {
