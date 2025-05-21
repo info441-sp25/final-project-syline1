@@ -11,6 +11,7 @@
     "debug": "~2.6.9",
     "express": "^4.21.0",
     "express-session": "^1.18.1",
+    "mongoose": "^8.15.0",
     "morgan": "~1.9.1",
     "msal-node-wrapper": "https://gitpkg.now.sh/kylethayer/ms-identity-javascript-nodejs-tutorial-msal-node-v2-/Common/msal-node-wrapper?main"
   }

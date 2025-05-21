@@ -24,6 +24,7 @@ const authConfig = {
 };
 
 import usersRouter from './routes/users.js';
+import postsRouter from './routes/posts.js';
 
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -52,6 +53,7 @@ const authProvider = await WebAppAuthProvider.WebAppAuthProvider.initialize(auth
 app.use(authProvider.authenticate());
 
 app.use('/users', usersRouter);
+app.use('/posts', postsRouter);
 
 app.get('/signin', (req, res, next) => {
     return req.authContext.login({
