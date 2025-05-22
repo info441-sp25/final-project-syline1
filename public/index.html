@@ -1,40 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlinkFeed</title>
+    <link rel="stylesheet" href="/styles/index.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BlinkFeed</title>
-  <link rel="stylesheet" href="/styles/index.css">
-</head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>BlinkFeed</h1>
+        <nav>
+          <a
+            href="/signin"
+            class="btn btn-primary"
+            id="signin-btn"
+            style="display: none"
+            >Sign In</a
+          >
+          <a
+            href="/signout"
+            class="btn btn-danger"
+            id="signout-btn"
+            style="display: none"
+            >Sign Out</a
+          >
+        </nav>
+      </header>
 
-<body>
-  <div class="container">
-    <header>
-      <h1>BlinkFeed</h1>
-      <nav>
-        <button id="signout-btn">Sign Out</button>
-      </nav>
-    </header>
-    
-    <!-- Post Creation Form -->
-    <div class="post-form">
-      <form id="post-form">
-        <textarea 
-          id="post-content" 
-          placeholder="What's on your mind?"
-          required
-        ></textarea>
-        <button type="submit">Post</button>
-      </form>
+      <!-- Post Creation Form -->
+      <div class="post-form">
+        <form id="post-form">
+          <textarea
+            id="post-content"
+            placeholder="What's on your mind?"
+            required
+          ></textarea>
+          <button type="submit">Post</button>
+        </form>
+      </div>
+
+      <!-- Posts Feed -->
+      <div id="feed"></div>
     </div>
 
-    <!-- Posts Feed -->
-    <div id="feed"></div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="/javascripts/index.js"></script>
-</body>
-
+    <!-- Scripts -->
+    <script src="/javascripts/index.js"></script>
+  </body>
 </html>

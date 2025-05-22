@@ -1,55 +1,130 @@
-import express from 'express';
+import express from "express";
 
-const router = express.Router();
+var router = express.Router();
 
 // Create a new post
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
+  console.log("POST /posts - Request received");
+  console.log("Request body:", req.body);
+  console.log("Session:", req.session);
+
+  if (!req.session.isAuthenticated) {
+    console.log("Not logged in: session is not authenticated");
+    return res.status(401).json({
+      status: "error",
+      error: "not logged in",
+    });
+  }
   try {
     const { content } = req.body;
-    const author = req.user._id;
-    const post = new Post({
-      author,
-      content
+    const username = req.session.account.username;
+    console.log("Authenticated user:", username);
+
+    // Find or create user in your DB
+    let user = await req.models.User.findOne({ email: username });
+    if (!user) {
+      console.log("User not found in DB, creating new user");
+      user = await req.models.User.create({
+        username: username,
+        email: username,
+      });
+    } else {
+      console.log("User found in DB:", user);
+    }
+
+    const newPost = new req.models.Post({
+      content,
+      author: user._id,
+      createdAt: new Date(),
     });
 
-    await post.save();
-    res.status(201).json(post);
+    console.log("Attempting to save post:", newPost);
+    await newPost.save();
+    console.log("Post saved successfully:", newPost);
+    res.json({ status: "success", post: newPost });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error creating post:", error);
+    res.status(500).json({ status: "error", error: error.message });
   }
 });
 
 // Get all posts
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
+  console.log("GET /posts - Request received");
   try {
-    const posts = await Post.find()
-      .populate('author', 'username')
+    const posts = await req.models.Post.find()
+      .populate("author", "username")
       .sort({ createdAt: -1 });
+    console.log("Found posts:", posts);
     res.json(posts);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error fetching posts:", error);
+    res.status(500).json({ status: "error", error: error.message });
   }
 });
 
 // Delete a post
-router.delete('/:postId', async (req, res) => {
+router.delete("/:postId", async (req, res) => {
+  console.log("DELETE /posts - Request received");
+  console.log("Post ID:", req.params.postId);
+  console.log("Auth Context:", req.authContext);
+
+  if (!req.authContext || !req.authContext.account) {
+    console.log("No auth context or account found");
+    return res
+      .status(401)
+      .json({ status: "error", error: "Not authenticated" });
+  }
+
   try {
-    const post = await Post.findById(req.params.postId);
-    
+    const post = await req.models.Post.findById(req.params.postId);
+    console.log("Found post:", post);
+
     if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+      console.log("Post not found");
+      return res.status(404).json({ status: "error", error: "Post not found" });
     }
 
-    // Check if the user is the author of the post
-    if (post.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ error: 'Not authorized to delete this post' });
+    // Get user
+    const user = await req.models.User.findOne({
+      email: req.authContext.account.username,
+    });
+
+    if (!user) {
+      console.log("User not found");
+      return res.status(401).json({ status: "error", error: "User not found" });
+    }
+
+    if (post.author.toString() !== user._id.toString()) {
+      console.log("User not authorized to delete post");
+      return res.status(403).json({
+        status: "error",
+        error: "Not authorized to delete this post",
+      });
     }
 
     await post.deleteOne();
+    console.log("Post deleted successfully");
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error deleting post:", error);
+    res.status(500).json({ status: "error", error: error.message });
   }
 });
 
-export default router; 
+router.get("/debug-auth", (req, res) => {
+  console.log("Session:", req.session);
+  console.log("AuthContext:", req.authContext);
+  res.json({
+    session: {
+      id: req.sessionID,
+      isAuthenticated: req.session.isAuthenticated,
+      account: req.session.account,
+    },
+    authContext: {
+      account: req.authContext?.account,
+    },
+  });
+});
+
+export default router;

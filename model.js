@@ -1,5 +1,14 @@
 import mongoose from 'mongoose';
 const models = {}
+
+console.log("connecting to mongodb");
+
+await mongoose.connect(
+  "mongodb+srv://jiawu123:Wujia2013@experiment.mgi9s7d.mongodb.net/Blinkfeed"
+);
+
+console.log("successfully connected to mongodb!");
+
 // User Schema
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -7,7 +16,7 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const User = mongoose.model('User', userSchema);
+models.User = mongoose.model('User', userSchema);
 // Post Schema
 const postSchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -22,6 +31,5 @@ const postSchema = new mongoose.Schema({
   }]
 });
 
-// Create and export the models
-const Post = mongoose.model('Post', postSchema);
+models.Post = mongoose.model('Post', postSchema);
 export default models
