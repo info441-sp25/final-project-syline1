@@ -20,6 +20,7 @@ router.post('/', async (req, res) => {
 });
 
 // Get all posts
+<<<<<<< HEAD
 router.get('/', async (req, res) => {
   try {
     const posts = await Post.find()
@@ -28,8 +29,22 @@ router.get('/', async (req, res) => {
     res.json(posts);
   } catch (error) {
     res.status(500).json({ error: error.message });
+=======
+router.get("/", async (req, res) => {
+  console.log("GET /posts - fetching posts from last 24 hours");
+  try {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const posts = await req.models.Post.find({ createdAt: { $gte: oneDayAgo } })
+      .populate("author", "username")
+      .sort({ createdAt: -1 });
+
+    res.json(posts);
+  } catch (error) {
+    console.error("Error fetching recent posts:", error);
+    res.status(500).json({ status: "error", error: error.message });
   }
 });
+
 
 // Delete a post
 router.delete('/:postId', async (req, res) => {
