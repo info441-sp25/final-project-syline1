@@ -31,5 +31,8 @@ const postSchema = new mongoose.Schema({
   }]
 });
 
+// Add TTL index to automatically delete posts after 24 hours
+postSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 }); // 86400 seconds = 24 hours
+
 models.Post = mongoose.model('Post', postSchema);
 export default models
