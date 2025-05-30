@@ -32,11 +32,25 @@ router.post("/", async (req, res) => {
       console.log("User found in DB:", user);
     }
 
+    // Extract hashtags from content
+    const hashtags = content.match(/#[\w]+/g) || [];
+    const cleanHashtags = hashtags.map(tag => tag.toLowerCase());
+
     const newPost = new req.models.Post({
       content,
       author: user._id,
       createdAt: new Date(),
+      hashtags: cleanHashtags
     });
+
+    // Update hashtag counts
+    for (const tag of cleanHashtags) {
+      await req.models.Hashtag.findOneAndUpdate(
+        { tag },
+        { $inc: { count: 1 }, lastUsed: new Date() },
+        { upsert: true }
+      );
+    }
 
     console.log("Attempting to save post:", newPost);
     await newPost.save();
@@ -125,6 +139,35 @@ router.get("/debug-auth", (req, res) => {
       account: req.authContext?.account,
     },
   });
+});
+
+// Add route for trending hashtags
+router.get("/trending", async (req, res) => {
+  try {
+    const trendingHashtags = await req.models.Hashtag.find()
+      .sort({ count: -1, lastUsed: -1 })
+      .limit(10);
+    
+    res.json(trendingHashtags);
+  } catch (error) {
+    console.error("Error fetching trending hashtags:", error);
+    res.status(500).json({ status: "error", error: error.message });
+  }
+});
+
+// Add route to get posts by hashtag
+router.get("/hashtag/:tag", async (req, res) => {
+  try {
+    const tag = req.params.tag.toLowerCase();
+    const posts = await req.models.Post.find({ hashtags: tag })
+      .populate("author", "username")
+      .sort({ createdAt: -1 });
+    
+    res.json(posts);
+  } catch (error) {
+    console.error("Error fetching posts by hashtag:", error);
+    res.status(500).json({ status: "error", error: error.message });
+  }
 });
 
 export default router;

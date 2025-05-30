@@ -76,6 +76,14 @@ function renderPosts(posts) {
 function createPostElement(post) {
   const postElement = document.createElement("div");
   postElement.className = "post";
+  postElement.dataset.createdAt = post.createdAt;
+  
+  // Highlight hashtags in content
+  const contentWithHighlightedHashtags = post.content.replace(
+    /#[\w]+/g,
+    match => `<a href="#" class="hashtag" data-tag="${match.slice(1)}">${match}</a>`
+  );
+  
   postElement.innerHTML = `
         <div class="post-header">
             <span class="post-author">${post.author.username}</span>
@@ -83,13 +91,23 @@ function createPostElement(post) {
               post.createdAt
             ).toLocaleString()}</span>
         </div>
-        <div class="post-content">${post.content}</div>
+        <div class="post-content">${contentWithHighlightedHashtags}</div>
         <div class="post-actions">
             <button onclick="deletePost('${
               post._id
             }')" class="delete-btn">Delete</button>
         </div>
     `;
+
+  // Add click handlers for hashtags in the post
+  postElement.querySelectorAll('.hashtag').forEach(link => {
+    link.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const tag = e.target.dataset.tag;
+      await loadPostsByHashtag(tag);
+    });
+  });
+
   return postElement;
 }
 
@@ -145,8 +163,14 @@ async function initialize() {
     signOutBtn.addEventListener("click", signOut);
   }
 
-  // Load initial posts
-  await loadPosts();
+  // Load initial posts and trending hashtags
+  await Promise.all([
+    loadPosts(),
+    loadTrendingHashtags()
+  ]);
+  
+  // Start periodic refresh
+  startPeriodicRefresh();
 }
 
 // Start the application when the DOM is loaded
@@ -185,3 +209,102 @@ async function updateAuthUI() {
 
 // Call this on page load
 document.addEventListener("DOMContentLoaded", updateAuthUI);
+
+// Add function to fetch trending hashtags
+async function fetchTrendingHashtags() {
+  try {
+    const response = await fetch("/posts/trending");
+    if (!response.ok) {
+      throw new Error("Failed to fetch trending hashtags");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching trending hashtags:", error);
+    throw error;
+  }
+}
+
+// Add function to render trending hashtags
+function renderTrendingHashtags(hashtags) {
+  const trendingContainer = document.getElementById("trending-hashtags");
+  if (!trendingContainer) return;
+
+  trendingContainer.innerHTML = `
+    <h3>Trending Hashtags</h3>
+    <div class="hashtag-list">
+      ${hashtags.map(tag => `
+        <a href="#" class="hashtag" data-tag="${tag.tag}">
+          #${tag.tag} (${tag.count})
+        </a>
+      `).join('')}
+    </div>
+  `;
+
+  // Add click handlers for hashtags
+  trendingContainer.querySelectorAll('.hashtag').forEach(link => {
+    link.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const tag = e.target.dataset.tag;
+      await loadPostsByHashtag(tag);
+    });
+  });
+}
+
+// Add function to load posts by hashtag
+async function loadPostsByHashtag(tag) {
+  try {
+    const response = await fetch(`/posts/hashtag/${tag}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch posts by hashtag");
+    }
+    const posts = await response.json();
+    renderPosts(posts);
+  } catch (error) {
+    showError("Failed to load posts by hashtag: " + error.message);
+  }
+}
+
+// Modify initialize function to load trending hashtags
+async function initialize() {
+  // Set up post form submission
+  const postForm = document.getElementById("post-form");
+  if (postForm) {
+    postForm.addEventListener("submit", handlePostSubmit);
+  }
+
+  // Set up sign out button
+  const signOutBtn = document.getElementById("signout-btn");
+  if (signOutBtn) {
+    signOutBtn.addEventListener("click", signOut);
+  }
+
+  // Load initial posts and trending hashtags
+  await Promise.all([
+    loadPosts(),
+    loadTrendingHashtags()
+  ]);
+  
+  // Start periodic refresh
+  startPeriodicRefresh();
+}
+
+// Add function to load trending hashtags
+async function loadTrendingHashtags() {
+  try {
+    const hashtags = await fetchTrendingHashtags();
+    renderTrendingHashtags(hashtags);
+  } catch (error) {
+    showError("Failed to load trending hashtags: " + error.message);
+  }
+}
+
+// Modify startPeriodicRefresh to also refresh trending hashtags
+function startPeriodicRefresh() {
+  // Refresh posts and trending hashtags every minute
+  setInterval(async () => {
+    await Promise.all([
+      loadPosts(),
+      loadTrendingHashtags()
+    ]);
+  }, 60000);
+}
