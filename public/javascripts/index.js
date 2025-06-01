@@ -60,6 +60,65 @@ async function deletePost(postId) {
   }
 }
 
+// Comment-related functions
+async function addComment(postId, content) {
+  try {
+    const response = await fetch(`/posts/${postId}/comments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ content }),
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to add comment");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    throw error;
+  }
+}
+
+async function upvotePost(postId) {
+  try {
+    const response = await fetch(`/posts/${postId}/upvote`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to upvote post");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error upvoting post:", error);
+    throw error;
+  }
+}
+
+async function downvotePost(postId) {
+  try {
+    const response = await fetch(`/posts/${postId}/downvote`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to downvote post");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error downvoting post:", error);
+    throw error;
+  }
+}
+
 // UI Functions
 function renderPosts(posts) {
   const feedContainer = document.getElementById("feed");
@@ -76,6 +135,7 @@ function renderPosts(posts) {
 function createPostElement(post) {
   const postElement = document.createElement("div");
   postElement.className = "post";
+  postElement.dataset.postId = post._id;
   postElement.dataset.createdAt = post.createdAt;
   
   const contentWithHighlightedHashtags = post.content.replace(
@@ -84,19 +144,40 @@ function createPostElement(post) {
   );
   
   postElement.innerHTML = `
-        <div class="post-header">
-            <span class="post-author">${post.author.username}</span>
-            <span class="post-time">${new Date(
-              post.createdAt
-            ).toLocaleString()}</span>
-        </div>
-        <div class="post-content">${contentWithHighlightedHashtags}</div>
-        <div class="post-actions">
-            <button onclick="deletePost('${
-              post._id
-            }')" class="delete-btn">Delete</button>
-        </div>
-    `;
+    <div class="post-header">
+      <span class="post-author">${post.author.username}</span>
+      <span class="post-time">${new Date(post.createdAt).toLocaleString()}</span>
+    </div>
+    <div class="post-content">${contentWithHighlightedHashtags}</div>
+    <div class="post-actions">
+      <div class="voting-section">
+        <button class="upvote-btn" onclick="handleUpvote('${post._id}')">
+          👍 <span class="upvote-count">${post.upvotes || 0}</span>
+        </button>
+        <button class="downvote-btn" onclick="handleDownvote('${post._id}')">
+          👎 <span class="downvote-count">${post.downvotes || 0}</span>
+        </button>
+      </div>
+      <button onclick="deletePost('${post._id}')" class="delete-btn">Delete</button>
+    </div>
+    <div class="comments-section">
+      <div class="comments-list">
+        ${post.comments.map(comment => `
+          <div class="comment">
+            <div class="comment-header">
+              <span class="comment-author">${comment.author.username}</span>
+              <span class="comment-time">${new Date(comment.timestamp).toLocaleString()}</span>
+            </div>
+            <div class="comment-content">${comment.content}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="comment-form">
+        <textarea class="comment-input" placeholder="Write a comment..."></textarea>
+        <button onclick="handleAddComment('${post._id}', this.parentElement.querySelector('.comment-input'))">Comment</button>
+      </div>
+    </div>
+  `;
 
   postElement.querySelectorAll('.hashtag').forEach(link => {
     link.addEventListener('click', async (e) => {
@@ -291,3 +372,64 @@ async function loadAccountIcon() {
 }
 
 document.addEventListener("DOMContentLoaded", loadAccountIcon);
+
+// Event handlers for the new features
+async function handleUpvote(postId) {
+  try {
+    const result = await upvotePost(postId);
+    const post = document.querySelector(`[data-post-id="${postId}"]`);
+    if (post) {
+      const upvoteCount = post.querySelector('.upvote-count');
+      if (upvoteCount) {
+        upvoteCount.textContent = result.upvotes;
+      }
+    }
+  } catch (error) {
+    showError("Failed to upvote: " + error.message);
+  }
+}
+
+async function handleDownvote(postId) {
+  try {
+    const result = await downvotePost(postId);
+    const post = document.querySelector(`[data-post-id="${postId}"]`);
+    if (post) {
+      const downvoteCount = post.querySelector('.downvote-count');
+      if (downvoteCount) {
+        downvoteCount.textContent = result.downvotes;
+      }
+    }
+  } catch (error) {
+    showError("Failed to downvote: " + error.message);
+  }
+}
+
+async function handleAddComment(postId, inputElement) {
+  const content = inputElement.value.trim();
+  if (!content) return;
+
+  try {
+    const result = await addComment(postId, content);
+    inputElement.value = "";
+    
+    // Add the new comment to the UI
+    const commentsSection = inputElement.closest('.comments-section').querySelector('.comments-list');
+    const commentElement = createCommentElement(result.comment);
+    commentsSection.appendChild(commentElement);
+  } catch (error) {
+    showError("Failed to add comment: " + error.message);
+  }
+}
+
+function createCommentElement(comment) {
+  const commentElement = document.createElement("div");
+  commentElement.className = "comment";
+  commentElement.innerHTML = `
+    <div class="comment-header">
+      <span class="comment-author">${comment.author.username}</span>
+      <span class="comment-time">${new Date(comment.timestamp).toLocaleString()}</span>
+    </div>
+    <div class="comment-content">${comment.content}</div>
+  `;
+  return commentElement;
+}

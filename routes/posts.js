@@ -68,6 +68,7 @@ router.get("/", async (req, res) => {
   try {
     const posts = await req.models.Post.find()
       .populate("author", "username")
+      .populate("comments.author", "username")
       .sort({ createdAt: -1 });
     console.log("Found posts:", posts);
     res.json(posts);
@@ -166,6 +167,121 @@ router.get("/hashtag/:tag", async (req, res) => {
     res.json(posts);
   } catch (error) {
     console.error("Error fetching posts by hashtag:", error);
+    res.status(500).json({ status: "error", error: error.message });
+  }
+});
+
+// Add a comment to a post
+router.post("/:postId/comments", async (req, res) => {
+  if (!req.session.isAuthenticated) {
+    return res.status(401).json({
+      status: "error",
+      error: "not logged in",
+    });
+  }
+
+  try {
+    const { content } = req.body;
+    const username = req.session.account.username;
+
+    // Find or create user
+    let user = await req.models.User.findOne({ email: username });
+    if (!user) {
+      user = await req.models.User.create({
+        username: username,
+        email: username,
+      });
+    }
+
+    const post = await req.models.Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ status: "error", error: "Post not found" });
+    }
+
+    const comment = {
+      author: user._id,
+      content: content,
+      timestamp: new Date()
+    };
+
+    post.comments.push(comment);
+    await post.save();
+
+    // Populate the author information for the new comment
+    const populatedPost = await req.models.Post.findById(post._id)
+      .populate("comments.author", "username");
+
+    res.json({
+      status: "success",
+      comment: populatedPost.comments[populatedPost.comments.length - 1]
+    });
+  } catch (error) {
+    res.status(500).json({ status: "error", error: error.message });
+  }
+});
+
+// Upvote a post
+router.post("/:postId/upvote", async (req, res) => {
+  if (!req.session.isAuthenticated) {
+    return res.status(401).json({
+      status: "error",
+      error: "not logged in",
+    });
+  }
+
+  try {
+    const post = await req.models.Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ status: "error", error: "Post not found" });
+    }
+
+    post.upvotes = (post.upvotes || 0) + 1;
+    await post.save();
+
+    res.json({ status: "success", upvotes: post.upvotes });
+  } catch (error) {
+    console.error("Error upvoting post:", error);
+    res.status(500).json({ status: "error", error: error.message });
+  }
+});
+
+// Downvote a post
+router.post("/:postId/downvote", async (req, res) => {
+  if (!req.session.isAuthenticated) {
+    return res.status(401).json({
+      status: "error",
+      error: "not logged in",
+    });
+  }
+
+  try {
+    const post = await req.models.Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ status: "error", error: "Post not found" });
+    }
+
+    post.downvotes = (post.downvotes || 0) + 1;
+    await post.save();
+
+    res.json({ status: "success", downvotes: post.downvotes });
+  } catch (error) {
+    console.error("Error downvoting post:", error);
+    res.status(500).json({ status: "error", error: error.message });
+  }
+});
+
+// Get comments for a post
+router.get("/:postId/comments", async (req, res) => {
+  try {
+    const post = await req.models.Post.findById(req.params.postId)
+      .populate("comments.author", "username");
+    
+    if (!post) {
+      return res.status(404).json({ status: "error", error: "Post not found" });
+    }
+
+    res.json(post.comments);
+  } catch (error) {
     res.status(500).json({ status: "error", error: error.message });
   }
 });
