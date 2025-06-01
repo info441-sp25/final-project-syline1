@@ -78,7 +78,6 @@ function createPostElement(post) {
   postElement.className = "post";
   postElement.dataset.createdAt = post.createdAt;
   
-  // Highlight hashtags in content
   const contentWithHighlightedHashtags = post.content.replace(
     /#[\w]+/g,
     match => `<a href="#" class="hashtag" data-tag="${match.slice(1)}">${match}</a>`
@@ -99,7 +98,6 @@ function createPostElement(post) {
         </div>
     `;
 
-  // Add click handlers for hashtags in the post
   postElement.querySelectorAll('.hashtag').forEach(link => {
     link.addEventListener('click', async (e) => {
       e.preventDefault();
@@ -137,7 +135,6 @@ async function loadPosts() {
   }
 }
 
-// Utility Functions
 function showError(message) {
   const errorDiv = document.createElement("div");
   errorDiv.className = "error-message";
@@ -148,32 +145,24 @@ function showError(message) {
 
 // Initialize
 async function initialize() {
-  // Remove the auth check
-  // if (!await checkAuth()) return;
-
-  // Set up post form submission
   const postForm = document.getElementById("post-form");
   if (postForm) {
     postForm.addEventListener("submit", handlePostSubmit);
   }
 
-  // Set up sign out button
   const signOutBtn = document.getElementById("signout-btn");
   if (signOutBtn) {
     signOutBtn.addEventListener("click", signOut);
   }
 
-  // Load initial posts and trending hashtags
   await Promise.all([
     loadPosts(),
     loadTrendingHashtags()
   ]);
   
-  // Start periodic refresh
   startPeriodicRefresh();
 }
 
-// Start the application when the DOM is loaded
 document.addEventListener("DOMContentLoaded", initialize);
 
 function signIn() {
@@ -207,10 +196,8 @@ async function updateAuthUI() {
   }
 }
 
-// Call this on page load
 document.addEventListener("DOMContentLoaded", updateAuthUI);
 
-// Add function to fetch trending hashtags
 async function fetchTrendingHashtags() {
   try {
     const response = await fetch("/posts/trending");
@@ -224,7 +211,6 @@ async function fetchTrendingHashtags() {
   }
 }
 
-// Add function to render trending hashtags
 function renderTrendingHashtags(hashtags) {
   const trendingContainer = document.getElementById("trending-hashtags");
   if (!trendingContainer) return;
@@ -240,7 +226,6 @@ function renderTrendingHashtags(hashtags) {
     </div>
   `;
 
-  // Add click handlers for hashtags
   trendingContainer.querySelectorAll('.hashtag').forEach(link => {
     link.addEventListener('click', async (e) => {
       e.preventDefault();
@@ -250,7 +235,6 @@ function renderTrendingHashtags(hashtags) {
   });
 }
 
-// Add function to load posts by hashtag
 async function loadPostsByHashtag(tag) {
   try {
     const response = await fetch(`/posts/hashtag/${tag}`);
@@ -264,31 +248,6 @@ async function loadPostsByHashtag(tag) {
   }
 }
 
-// Modify initialize function to load trending hashtags
-async function initialize() {
-  // Set up post form submission
-  const postForm = document.getElementById("post-form");
-  if (postForm) {
-    postForm.addEventListener("submit", handlePostSubmit);
-  }
-
-  // Set up sign out button
-  const signOutBtn = document.getElementById("signout-btn");
-  if (signOutBtn) {
-    signOutBtn.addEventListener("click", signOut);
-  }
-
-  // Load initial posts and trending hashtags
-  await Promise.all([
-    loadPosts(),
-    loadTrendingHashtags()
-  ]);
-  
-  // Start periodic refresh
-  startPeriodicRefresh();
-}
-
-// Add function to load trending hashtags
 async function loadTrendingHashtags() {
   try {
     const hashtags = await fetchTrendingHashtags();
@@ -298,9 +257,7 @@ async function loadTrendingHashtags() {
   }
 }
 
-// Modify startPeriodicRefresh to also refresh trending hashtags
 function startPeriodicRefresh() {
-  // Refresh posts and trending hashtags every minute
   setInterval(async () => {
     await Promise.all([
       loadPosts(),
@@ -308,3 +265,29 @@ function startPeriodicRefresh() {
     ]);
   }, 60000);
 }
+
+//  Account Button Logic ===
+async function loadAccountIcon() {
+  try {
+    const res = await fetch("/users/auth-status", { credentials: "include" });
+    const data = await res.json();
+
+    const accountBtn = document.getElementById("account-btn");
+    if (!accountBtn) return;
+
+    if (data.isAuthenticated) {
+      if (data.profilePicture) {
+        accountBtn.innerHTML = `<div class="profile-circle"><img src="${data.profilePicture}" alt="Profile Picture" class="profile-pic" /></div>`;
+      } else {
+        accountBtn.innerHTML = `<div class="profile-circle"><img src="/project-user-icon.png" alt="User Icon" class="profile-pic" /></div>`;
+      }
+      accountBtn.style.display = "inline-block";
+    } else {
+      accountBtn.style.display = "none";
+    }
+  } catch (err) {
+    console.error("Error loading account icon:", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadAccountIcon);

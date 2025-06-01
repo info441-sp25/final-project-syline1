@@ -3,31 +3,66 @@
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
-}
-
-/* Header */
-header {
+  }
+  
+  /* Header */
+  header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-}
-
-header h1 {
+  }
+  
+  header h1 {
     margin: 0;
     color: #333;
-}
-
-/* Post Form */
-.post-form {
+  }
+  
+  /* Account Profile Icon */
+  #account-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 15px;
+  }
+  
+  #account-btn .profile-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #account-btn .profile-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  #account-btn .profile-circle.default img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+    filter: invert(0.4);
+  }
+  
+  /* Post Form */
+  .post-form {
     margin-bottom: 20px;
     padding: 20px;
     background-color: #f5f5f5;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.post-form textarea {
+  }
+  
+  .post-form textarea {
     width: 100%;
     min-height: 100px;
     margin-bottom: 10px;
@@ -36,9 +71,9 @@ header h1 {
     border-radius: 4px;
     resize: vertical;
     font-family: inherit;
-}
-
-.post-form button {
+  }
+  
+  .post-form button {
     background-color: #007bff;
     color: white;
     border: none;
@@ -46,42 +81,42 @@ header h1 {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
-}
-
-.post-form button:hover {
+  }
+  
+  .post-form button:hover {
     background-color: #0056b3;
-}
-
-/* Posts */
-.post {
+  }
+  
+  /* Posts */
+  .post {
     margin-bottom: 20px;
     padding: 15px;
     background-color: white;
     border: 1px solid #ddd;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.post-header {
+  }
+  
+  .post-header {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
     color: #666;
     font-size: 0.9em;
-}
-
-.post-content {
+  }
+  
+  .post-content {
     margin-bottom: 10px;
     line-height: 1.5;
-}
-
-.post-actions {
+  }
+  
+  .post-actions {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-}
-
-.delete-btn {
+  }
+  
+  .delete-btn {
     background-color: #dc3545;
     color: white;
     border: none;
@@ -89,14 +124,14 @@ header h1 {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
-}
-
-.delete-btn:hover {
+  }
+  
+  .delete-btn:hover {
     background-color: #c82333;
-}
-
-/* Error Messages */
-.error-message {
+  }
+  
+  /* Error Messages */
+  .error-message {
     position: fixed;
     top: 20px;
     right: 20px;
@@ -106,20 +141,20 @@ header h1 {
     border-radius: 4px;
     animation: fadeIn 0.3s, fadeOut 0.3s 4.7s;
     z-index: 1000;
-}
-
-@keyframes fadeIn {
+  }
+  
+  @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
-}
-
-@keyframes fadeOut {
+  }
+  
+  @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
-}
-
-/* Navigation */
-nav button {
+  }
+  
+  /* Navigation Buttons */
+  nav button {
     background-color: #6c757d;
     color: white;
     border: none;
@@ -127,33 +162,33 @@ nav button {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
-}
-
-nav button:hover {
+  }
+  
+  nav button:hover {
     background-color: #5a6268;
-}
-
-/* Trending Hashtags */
-.trending-section {
+  }
+  
+  /* Trending Hashtags */
+  .trending-section {
     margin: 20px 0;
     padding: 15px;
     background-color: #f8f9fa;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.trending-section h3 {
+  }
+  
+  .trending-section h3 {
     margin: 0 0 10px 0;
     color: #333;
-}
-
-.hashtag-list {
+  }
+  
+  .hashtag-list {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-}
-
-.hashtag {
+  }
+  
+  .hashtag {
     display: inline-block;
     padding: 5px 10px;
     background-color: #e9ecef;
@@ -162,20 +197,154 @@ nav button:hover {
     border-radius: 15px;
     font-size: 0.9em;
     transition: background-color 0.2s;
-}
-
-.hashtag:hover {
+  }
+  
+  .hashtag:hover {
     background-color: #dee2e6;
     text-decoration: none;
-}
-
-/* Post content hashtags */
-.post-content .hashtag {
+  }
+  
+  /* Post content hashtags */
+  .post-content .hashtag {
     color: #007bff;
     text-decoration: none;
     font-weight: 500;
-}
-
-.post-content .hashtag:hover {
+  }
+  
+  .post-content .hashtag:hover {
     text-decoration: underline;
-} 
+  }
+  
+  /* Account Page Layout */
+  .account-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  .logout-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .logout-btn:hover {
+    background-color: #c82333;
+  }
+  
+  .email-top-right {
+    font-size: 0.9rem;
+    color: #333;
+  }
+  
+  .account-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .profile-section {
+    text-align: center;
+  }
+  
+  .profile-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 20px auto;
+    background-color: #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .profile-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .account-info-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .account-info-form label {
+    text-align: left;
+    font-weight: bold;
+  }
+  
+  .account-info-form input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .edit-btn {
+    padding: 8px 16px;
+    background-color: white;
+    color: #333;
+    border: 1px solid #333;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .view-posts-link {
+    display: inline-block;
+    text-align: center;
+    margin: 30px auto;
+    font-weight: bold;
+    text-decoration: none;
+    color: #333;
+  }
+  
+  .view-posts-link:hover {
+    text-decoration: underline;
+  }
+  
+  .all-posts-section {
+    margin-top: 40px;
+  }
+  
+  .all-posts-section h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .all-posts-section ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .all-posts-section li {
+    padding: 8px;
+    border-bottom: 1px solid #ccc;
+  }
+  
+  .home-link {
+    text-align: center;
+    margin-top: 40px;
+  }
+  
+  .home-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.2s;
+  }
+  
+  .home-btn:hover {
+    background-color: #0056b3;
+  }
+  
