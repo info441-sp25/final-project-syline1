@@ -11,11 +11,71 @@ header {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  padding: 15px 0;
+  border-bottom: 1px solid #e9ecef;
 }
 
-header h1 {
-  margin: 0;
+.navbar-titleblock {
+  flex: 1;
+}
+
+.navbar-title {
   color: #333;
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.navbar-desc {
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  max-width: 500px;
+}
+
+/* Navigation */
+nav {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+nav a {
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+nav .btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+nav .btn-primary:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+nav .btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+nav .btn-danger:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+}
+
+nav .btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+nav .btn-secondary:hover {
+  background-color: #5a6268;
+  transform: translateY(-1px);
 }
 
 /* Account Profile Icon */
@@ -159,21 +219,6 @@ header h1 {
   to {
     opacity: 0;
   }
-}
-
-/* Navigation Buttons */
-nav button {
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-nav button:hover {
-  background-color: #5a6268;
 }
 
 /* Trending Hashtags */
@@ -383,29 +428,6 @@ nav button:hover {
   align-items: flex-start;
   justify-content: space-between;
   border-radius: 0 0 18px 18px;
-}
-
-/* Title + Description Block */
-.navbar-titleblock {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  max-width: 600px;
-}
-.navbar-title {
-  font-size: 2.2rem;
-  font-weight: bold;
-  letter-spacing: 1px;
-  margin-bottom: 8px;
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-.navbar-desc {
-  font-size: 1.08rem;
-  color: #133366; /* Dark blue */
-  line-height: 1.5;
-  margin-top: 2px;
-  max-width: 600px;
 }
 
 /* Right-side button area */
