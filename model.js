@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-const models = {}
+import mongoose from "mongoose";
+const models = {};
 
 console.log("connecting to mongodb");
 
@@ -13,23 +13,25 @@ console.log("successfully connected to mongodb!");
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
-models.User = mongoose.model('User', userSchema);
+models.User = mongoose.model("User", userSchema);
 // Post Schema
 const postSchema = new mongoose.Schema({
-  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   content: { type: String, required: true },
   hashtags: [{ type: String }], // Array of hashtags
   createdAt: { type: Date, default: Date.now },
   upvotes: { type: Number, default: 0 },
   downvotes: { type: Number, default: 0 },
-  comments: [{
-    author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    content: String,
-    timestamp: { type: Date, default: Date.now }
-  }]
+  comments: [
+    {
+      author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      content: String,
+      timestamp: { type: Date, default: Date.now },
+    },
+  ],
 });
 
 // Add TTL index to automatically delete posts after 24 hours
@@ -39,9 +41,9 @@ postSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 }); // 86400 seco
 const hashtagSchema = new mongoose.Schema({
   tag: { type: String, required: true, unique: true },
   count: { type: Number, default: 1 },
-  lastUsed: { type: Date, default: Date.now }
+  lastUsed: { type: Date, default: Date.now },
 });
 
-models.Post = mongoose.model('Post', postSchema);
-models.Hashtag = mongoose.model('Hashtag', hashtagSchema);
-export default models
+models.Post = mongoose.model("Post", postSchema);
+models.Hashtag = mongoose.model("Hashtag", hashtagSchema);
+export default models;
