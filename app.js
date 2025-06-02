@@ -65,6 +65,21 @@ const authProvider = await WebAppAuthProvider.WebAppAuthProvider.initialize(
 );
 app.use(authProvider.authenticate());
 
+
+app.use((req, res, next) => {
+  if (req.session && req.session.account && req.session.account.idTokenClaims) {
+    const claims = req.session.account.idTokenClaims;
+
+    req.session.account.username = claims.preferred_username || claims.name || null;
+    req.session.account.email = claims.email || claims.preferred_username || null;
+    req.session.account.name = claims.name || null;
+    req.session.account.profilePicture = req.session.account.profilePicture || null;
+
+    req.session.save();
+  }
+  next();
+});
+
 app.use("/users", usersRouter);
 app.use("/posts", postsRouter);
 

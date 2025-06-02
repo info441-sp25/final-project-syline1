@@ -18,13 +18,14 @@ router.get("/auth-status", (req, res) => {
   });
 });
 
-router.get('/:username', async (req, res) => {
+router.get('/me', async (req, res) => {
   try {
-    const username = req.params.username;
-    const user = await req.models.User.findOne({ username });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    if (!req.session.account || !req.session.account.email) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
+
+    const user = await req.models.User.findOne({ email: req.session.account.email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const posts = await req.models.Post.find({
@@ -41,7 +42,7 @@ router.get('/:username', async (req, res) => {
         profilePicture: user.profilePicture || null
       },
       posts
-    });    
+    });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }

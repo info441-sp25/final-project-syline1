@@ -1,142 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Account Information</title>
-    <link rel="stylesheet" href="/styles/index.css" />
-  </head>
-  <body>
-    <header class="account-header">
-      <button id="logout-btn" class="logout-btn">Log Out</button>
-      <span id="user-email" class="email-top-right"></span>
-    </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account Information</title>
+  <link rel="stylesheet" href="/styles/index.css" />
+</head>
+<body>
+  <header class="account-header">
+    <button id="logout-btn" class="logout-btn">Log Out</button>
+    <span id="user-email" class="email-top-right"></span>
+  </header>
 
-    <main class="account-container">
-      <div class="all-posts-section">
-        <h2>All Posts</h2>
-        <ul id="all-posts-list"></ul>
+  <main class="account-container">
+    <div class="all-posts-section">
+      <h2>My Posts (Last 24 Hours)</h2>
+      <ul id="all-posts-list"></ul>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-icon">
+        <img src="/project-user-icon.png" alt="Profile Icon" id="profile-pic" />
       </div>
+      <h2>Account Information</h2>
+      <form class="account-info-form" id="profile-form" enctype="multipart/form-data">
+        <label>Username</label>
+        <input type="text" id="username" disabled />
 
-      <div class="profile-section">
-        <div class="profile-icon">
-          <img
-            src="/project-user-icon.png"
-            alt="Profile Icon"
-            id="profile-pic"
-          />
-        </div>
-        <h2>Account Information</h2>
-        <form
-          class="account-info-form"
-          id="profile-form"
-          enctype="multipart/form-data"
-        >
-          <label>Username</label>
-          <input type="text" id="username" disabled />
+        <label>Name</label>
+        <input type="text" id="name" name="name" />
 
-          <label>Name</label>
-          <input type="text" id="name" name="name" />
+        <label>Email</label>
+        <input type="text" id="email" disabled />
 
-          <label>Email</label>
-          <input type="text" id="email" disabled />
+        <label>Date of Birth</label>
+        <input type="text" id="dob" name="dateOfBirth" />
 
-          <label>Date of Birth</label>
-          <input type="text" id="dob" name="dateOfBirth" />
+        <label>Profile Picture</label>
+        <input type="file" id="profilePicture" name="profilePicture" accept="image/*" />
 
-          <label>Profile Picture</label>
-          <input
-            type="file"
-            id="profilePicture"
-            name="profilePicture"
-            accept="image/*"
-          />
+        <button id="save-changes-btn" class="edit-btn">Save Changes</button>
+      </form>
+    </div>
 
-          <button id="save-changes-btn" class="edit-btn">Save Changes</button>
-        </form>
-      </div>
+    <div class="home-link">
+      <a href="/" class="home-btn">Home</a>
+    </div>
+  </main>
 
-      <div class="home-link">
-        <a href="/" class="home-btn">Home</a>
-      </div>
-    </main>
+  <script>
+    fetch("/users/auth-status", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.isAuthenticated || !data.username) {
+          document.body.innerHTML = "<h2>Please sign in to view your account.</h2>";
+          return;
+        }
 
-    <script>
-      // Auth and profile data
-      fetch("/users/auth-status", { credentials: "include" })
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.isAuthenticated || !data.username) {
-            document.body.innerHTML =
-              "<h2>Please sign in to view your account.</h2>";
-            return;
-          }
+        document.getElementById("user-email").textContent = data.username;
 
-          document.getElementById("user-email").textContent = data.username;
+        fetch("/users/me")
+          .then(res => res.json())
+          .then(profile => {
+            document.getElementById("username").value = profile.user.username;
+            document.getElementById("name").value = profile.user.name || "";
+            document.getElementById("email").value = profile.user.email;
+            document.getElementById("dob").value = profile.user.dateOfBirth || "";
 
-          fetch(`/users/${data.username}`)
-            .then((res) => res.json())
-            .then((profile) => {
-              document.getElementById("username").value = profile.user.username;
-              document.getElementById("name").value = profile.user.name || "";
-              document.getElementById("email").value = profile.user.email;
-              document.getElementById("dob").value =
-                profile.user.dateOfBirth || "";
+            if (profile.user.profilePicture) {
+              document.getElementById("profile-pic").src = profile.user.profilePicture;
+            }
 
-              if (profile.user.profilePicture) {
-                document.getElementById("profile-pic").src =
-                  profile.user.profilePicture;
-              }
+            const allPostsList = document.getElementById('all-posts-list');
+            allPostsList.innerHTML = "";
+            profile.posts.forEach(post => {
+              const li = document.createElement('li');
+              li.textContent = `${profile.user.username}: ${post.content} (Posted at ${new Date(post.createdAt).toLocaleString()})`;
+              allPostsList.appendChild(li);
             });
-        });
-
-      // Logout
-      document.getElementById("logout-btn").addEventListener("click", () => {
-        window.location.href = "/signout";
+          });
       });
 
-      // Save form (name, dob, picture)
-      document
-        .getElementById("save-changes-btn")
-        .addEventListener("click", async (e) => {
-          e.preventDefault();
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      window.location.href = "/signout";
+    });
 
-          const form = document.getElementById("profile-form");
-          const formData = new FormData(form);
+    document.getElementById("save-changes-btn").addEventListener("click", async (e) => {
+      e.preventDefault();
 
-          try {
-            const res = await fetch("/users/update-profile", {
-              method: "POST",
-              body: formData,
-              credentials: "include",
-            });
+      const form = document.getElementById("profile-form");
+      const formData = new FormData(form);
 
-            const data = await res.json();
-            if (data.success) {
-              alert("Profile updated!");
-              location.reload();
-            } else {
-              alert("Update failed: " + data.error);
-            }
-          } catch (err) {
-            console.error("Update error:", err);
-          }
+      try {
+        const res = await fetch("/users/update-profile", {
+          method: "POST",
+          body: formData,
+          credentials: "include",
         });
 
-      // Load all posts
-      fetch("/posts")
-        .then((res) => res.json())
-        .then((data) => {
-          const allPostsList = document.getElementById("all-posts-list");
-          data.forEach((post) => {
-            const li = document.createElement("li");
-            li.textContent = `${post.author.username}: ${
-              post.content
-            } (Posted at ${new Date(post.createdAt).toLocaleString()})`;
-            allPostsList.appendChild(li);
-          });
-        })
-        .catch((err) => console.error("Error loading all posts:", err));
-    </script>
-  </body>
+        const data = await res.json();
+        if (data.success) {
+          alert("Profile updated!");
+          location.reload();
+        } else {
+          alert("Update failed: " + data.error);
+        }
+      } catch (err) {
+        console.error("Update error:", err);
+      }
+    });
+  </script>
+</body>
 </html>
