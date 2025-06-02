@@ -15,7 +15,7 @@
   <main class="account-container">
     <div class="all-posts-section">
       <h2>My Posts (Last 24 Hours)</h2>
-      <ul id="all-posts-list"></ul>
+      <div id="all-posts-list" class="posts-grid"></div>
     </div>
 
     <div class="profile-section">
@@ -95,13 +95,28 @@
         const res = await fetch("/users/update-profile", {
           method: "POST",
           body: formData,
-          credentials: "include",
+          credentials: "include"
         });
 
         const data = await res.json();
         if (data.success) {
+          // Update the profile picture on the account page
+          const profilePic = document.getElementById("profile-pic");
+          if (data.profilePicture) {
+            profilePic.src = data.profilePicture;
+          }
+          
+          // Update the profile picture in the navigation bar
+          const accountBtn = document.getElementById("account-btn");
+          if (accountBtn) {
+            if (data.profilePicture) {
+              accountBtn.innerHTML = `<div class="profile-circle"><img src="${data.profilePicture}" alt="Profile Picture" class="profile-pic" /></div>`;
+            } else {
+              accountBtn.innerHTML = `<div class="profile-circle"><img src="/project-user-icon.png" alt="User Icon" class="profile-pic" /></div>`;
+            }
+          }
+          
           alert("Profile updated!");
-          location.reload();
         } else {
           alert("Update failed: " + data.error);
         }
@@ -109,6 +124,22 @@
         console.error("Update error:", err);
       }
     });
+
+    async function deletePost(postId) {
+      try {
+        const response = await fetch(`/posts/${postId}`, {
+          method: "DELETE",
+          credentials: "include"
+        });
+        if (!response.ok) {
+          throw new Error("Failed to delete post");
+        }
+        location.reload();
+      } catch (error) {
+        console.error("Error deleting post:", error);
+        alert("Failed to delete post");
+      }
+    }
   </script>
 </body>
 </html>

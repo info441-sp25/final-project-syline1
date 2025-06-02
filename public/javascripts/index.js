@@ -123,7 +123,8 @@ async function downvotePost(postId) {
 function renderPosts(posts) {
   const feedContainer = document.getElementById("feed");
   if (!feedContainer) return;
-
+  // Sort posts by creation date (newest first)
+  posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   feedContainer.innerHTML = ""; // Clear existing posts
 
   posts.forEach((post) => {
@@ -140,12 +141,8 @@ function createPostElement(post) {
   
   const contentWithHighlightedHashtags = post.content.replace(
     /#[\w]+/g,
-    match => `<a href="#" class="hashtag" data-tag="${match.slice(1)}">${match}</a>`
+    match => `<span class="hashtag">${match}</span>`
   );
-  
-  // Add vote status classes
-  const upvoteClass = post.userVote === 'up' ? 'voted' : '';
-  const downvoteClass = post.userVote === 'down' ? 'voted' : '';
   
   postElement.innerHTML = `
     <div class="post-header">
@@ -155,10 +152,10 @@ function createPostElement(post) {
     <div class="post-content">${contentWithHighlightedHashtags}</div>
     <div class="post-actions">
       <div class="voting-section">
-        <button class="upvote-btn ${upvoteClass}" onclick="handleUpvote('${post._id}', this)">
+        <button class="upvote-btn" onclick="handleUpvote('${post._id}')">
           👍 <span class="upvote-count">${post.upvotes || 0}</span>
         </button>
-        <button class="downvote-btn ${downvoteClass}" onclick="handleDownvote('${post._id}', this)">
+        <button class="downvote-btn" onclick="handleDownvote('${post._id}')">
           👎 <span class="downvote-count">${post.downvotes || 0}</span>
         </button>
       </div>
@@ -182,14 +179,6 @@ function createPostElement(post) {
       </div>
     </div>
   `;
-
-  postElement.querySelectorAll('.hashtag').forEach(link => {
-    link.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const tag = e.target.dataset.tag;
-      await loadPostsByHashtag(tag);
-    });
-  });
 
   return postElement;
 }
@@ -304,20 +293,12 @@ function renderTrendingHashtags(hashtags) {
     <h3>Trending Hashtags</h3>
     <div class="hashtag-list">
       ${hashtags.map(tag => `
-        <a href="#" class="hashtag" data-tag="${tag.tag}">
+        <span class="hashtag">
           #${tag.tag} (${tag.count})
-        </a>
+        </span>
       `).join('')}
     </div>
   `;
-
-  trendingContainer.querySelectorAll('.hashtag').forEach(link => {
-    link.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const tag = e.target.dataset.tag;
-      await loadPostsByHashtag(tag);
-    });
-  });
 }
 
 async function loadPostsByHashtag(tag) {
@@ -378,26 +359,14 @@ async function loadAccountIcon() {
 document.addEventListener("DOMContentLoaded", loadAccountIcon);
 
 // Event handlers for the new features
-async function handleUpvote(postId, buttonElement) {
+async function handleUpvote(postId) {
   try {
     const result = await upvotePost(postId);
     const post = document.querySelector(`[data-post-id="${postId}"]`);
     if (post) {
-      const upvoteBtn = post.querySelector('.upvote-btn');
-      const downvoteBtn = post.querySelector('.downvote-btn');
       const upvoteCount = post.querySelector('.upvote-count');
-      const downvoteCount = post.querySelector('.downvote-count');
-
-      // Update vote counts
-      if (upvoteCount) upvoteCount.textContent = result.upvotes;
-      if (downvoteCount) downvoteCount.textContent = result.downvotes;
-
-      // Update button states
-      if (result.userVote === 'up') {
-        upvoteBtn.classList.add('voted');
-        downvoteBtn.classList.remove('voted');
-      } else {
-        upvoteBtn.classList.remove('voted');
+      if (upvoteCount) {
+        upvoteCount.textContent = result.upvotes;
       }
     }
   } catch (error) {
@@ -405,26 +374,14 @@ async function handleUpvote(postId, buttonElement) {
   }
 }
 
-async function handleDownvote(postId, buttonElement) {
+async function handleDownvote(postId) {
   try {
     const result = await downvotePost(postId);
     const post = document.querySelector(`[data-post-id="${postId}"]`);
     if (post) {
-      const upvoteBtn = post.querySelector('.upvote-btn');
-      const downvoteBtn = post.querySelector('.downvote-btn');
-      const upvoteCount = post.querySelector('.upvote-count');
       const downvoteCount = post.querySelector('.downvote-count');
-
-      // Update vote counts
-      if (upvoteCount) upvoteCount.textContent = result.upvotes;
-      if (downvoteCount) downvoteCount.textContent = result.downvotes;
-
-      // Update button states
-      if (result.userVote === 'down') {
-        downvoteBtn.classList.add('voted');
-        upvoteBtn.classList.remove('voted');
-      } else {
-        downvoteBtn.classList.remove('voted');
+      if (downvoteCount) {
+        downvoteCount.textContent = result.downvotes;
       }
     }
   } catch (error) {

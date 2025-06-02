@@ -1,7 +1,41 @@
 import express from "express";
 import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
-const upload = multer({ dest: 'uploads/' }); // Save uploaded files temporarily
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for permanent storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    // Create unique filename with original extension
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'profile-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: function (req, file, cb) {
+    // Accept only image files
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
+
 var router = express.Router();
 
 /* GET users listing. */
@@ -62,14 +96,34 @@ router.post('/update-profile', upload.single('profilePicture'), async (req, res)
     if (req.body.dateOfBirth) user.dateOfBirth = req.body.dateOfBirth;
 
     if (req.file) {
+      // Delete old profile picture if it exists
+      if (user.profilePicture) {
+        const oldFilePath = path.join(process.cwd(), 'public', user.profilePicture);
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      }
+
+      // Save new profile picture path
       const profilePicPath = `/uploads/${req.file.filename}`;
       user.profilePicture = profilePicPath;
+      req.session.account.profilePicture = profilePicPath;
     }
 
     await user.save();
-    res.json({ success: true });
+    res.json({ 
+      success: true,
+      profilePicture: user.profilePicture
+    });
   } catch (err) {
     console.error(err);
+    // If there was an error and a file was uploaded, delete it
+    if (req.file) {
+      const filePath = path.join(process.cwd(), 'public', req.file.path);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
     res.status(500).json({ error: err.message });
   }
 });

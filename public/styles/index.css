@@ -3,6 +3,49 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  position: relative;
+}
+
+/* Add user-select prevention */
+body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in input fields */
+input, textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Add screenshot prevention styles */
+.post {
+  position: relative;
+  overflow: hidden;
+}
+
+.post::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+      rgba(255,255,255,0.1) 25%, 
+      transparent 25%, 
+      transparent 50%, 
+      rgba(255,255,255,0.1) 50%, 
+      rgba(255,255,255,0.1) 75%, 
+      transparent 75%, 
+      transparent);
+  background-size: 10px 10px;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Header */
@@ -246,26 +289,26 @@ nav .btn-secondary:hover {
   padding: 5px 10px;
   background-color: #e9ecef;
   color: #007bff;
-  text-decoration: none;
   border-radius: 15px;
   font-size: 0.9em;
-  transition: background-color 0.2s;
+  margin: 2px;
 }
 
 .hashtag:hover {
-  background-color: #dee2e6;
-  text-decoration: none;
+  background-color: #e9ecef;
+  cursor: default;
 }
 
 /* Post content hashtags */
 .post-content .hashtag {
   color: #007bff;
-  text-decoration: none;
   font-weight: 500;
 }
 
+/* Remove hover effects and link styling */
 .post-content .hashtag:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  cursor: default;
 }
 
 /* Account Page Layout */

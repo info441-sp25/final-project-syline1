@@ -68,30 +68,8 @@ router.get("/", async (req, res) => {
   try {
     const posts = await req.models.Post.find()
       .populate("author", "username")
-      .populate("comments.author", "username");
-
-    // If user is logged in, include their vote status for each post
-    let userVotes = {};
-    if (req.session.isAuthenticated) {
-      const username = req.session.account.username;
-      const user = await req.models.User.findOne({ email: username });
-      if (user) {
-        posts.forEach(post => {
-          if (post.upvotedBy.includes(user._id)) {
-            userVotes[post._id] = 'up';
-          } else if (post.downvotedBy.includes(user._id)) {
-            userVotes[post._id] = 'down';
-          }
-        });
-      }
-    }
-
-    const postsWithVotes = posts.map(post => ({
-      ...post.toObject(),
-      userVote: userVotes[post._id] || null
-    }));
-
-    res.json(postsWithVotes);
+      .sort({ createdAt: -1 });
+    res.json(posts);
   } catch (error) {
     console.error("Error fetching posts:", error);
     res.status(500).json({ status: "error", error: error.message });
@@ -182,9 +160,31 @@ router.get("/hashtag/:tag", async (req, res) => {
     const tag = req.params.tag.toLowerCase();
     const posts = await req.models.Post.find({ hashtags: tag })
       .populate("author", "username")
+      .populate("comments.author", "username")
       .sort({ createdAt: -1 });
+
+    // If user is logged in, include their vote status for each post
+    let userVotes = {};
+    if (req.session.isAuthenticated) {
+      const username = req.session.account.username;
+      const user = await req.models.User.findOne({ email: username });
+      if (user) {
+        posts.forEach(post => {
+          if (post.upvotedBy.includes(user._id)) {
+            userVotes[post._id] = 'up';
+          } else if (post.downvotedBy.includes(user._id)) {
+            userVotes[post._id] = 'down';
+          }
+        });
+      }
+    }
+
+    const postsWithVotes = posts.map(post => ({
+      ...post.toObject(),
+      userVote: userVotes[post._id] || null
+    }));
     
-    res.json(posts);
+    res.json(postsWithVotes);
   } catch (error) {
     console.error("Error fetching posts by hashtag:", error);
     res.status(500).json({ status: "error", error: error.message });
