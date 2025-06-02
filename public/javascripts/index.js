@@ -143,6 +143,10 @@ function createPostElement(post) {
     match => `<a href="#" class="hashtag" data-tag="${match.slice(1)}">${match}</a>`
   );
   
+  // Add vote status classes
+  const upvoteClass = post.userVote === 'up' ? 'voted' : '';
+  const downvoteClass = post.userVote === 'down' ? 'voted' : '';
+  
   postElement.innerHTML = `
     <div class="post-header">
       <span class="post-author">${post.author.username}</span>
@@ -151,10 +155,10 @@ function createPostElement(post) {
     <div class="post-content">${contentWithHighlightedHashtags}</div>
     <div class="post-actions">
       <div class="voting-section">
-        <button class="upvote-btn" onclick="handleUpvote('${post._id}')">
+        <button class="upvote-btn ${upvoteClass}" onclick="handleUpvote('${post._id}', this)">
           👍 <span class="upvote-count">${post.upvotes || 0}</span>
         </button>
-        <button class="downvote-btn" onclick="handleDownvote('${post._id}')">
+        <button class="downvote-btn ${downvoteClass}" onclick="handleDownvote('${post._id}', this)">
           👎 <span class="downvote-count">${post.downvotes || 0}</span>
         </button>
       </div>
@@ -374,14 +378,26 @@ async function loadAccountIcon() {
 document.addEventListener("DOMContentLoaded", loadAccountIcon);
 
 // Event handlers for the new features
-async function handleUpvote(postId) {
+async function handleUpvote(postId, buttonElement) {
   try {
     const result = await upvotePost(postId);
     const post = document.querySelector(`[data-post-id="${postId}"]`);
     if (post) {
+      const upvoteBtn = post.querySelector('.upvote-btn');
+      const downvoteBtn = post.querySelector('.downvote-btn');
       const upvoteCount = post.querySelector('.upvote-count');
-      if (upvoteCount) {
-        upvoteCount.textContent = result.upvotes;
+      const downvoteCount = post.querySelector('.downvote-count');
+
+      // Update vote counts
+      if (upvoteCount) upvoteCount.textContent = result.upvotes;
+      if (downvoteCount) downvoteCount.textContent = result.downvotes;
+
+      // Update button states
+      if (result.userVote === 'up') {
+        upvoteBtn.classList.add('voted');
+        downvoteBtn.classList.remove('voted');
+      } else {
+        upvoteBtn.classList.remove('voted');
       }
     }
   } catch (error) {
@@ -389,14 +405,26 @@ async function handleUpvote(postId) {
   }
 }
 
-async function handleDownvote(postId) {
+async function handleDownvote(postId, buttonElement) {
   try {
     const result = await downvotePost(postId);
     const post = document.querySelector(`[data-post-id="${postId}"]`);
     if (post) {
+      const upvoteBtn = post.querySelector('.upvote-btn');
+      const downvoteBtn = post.querySelector('.downvote-btn');
+      const upvoteCount = post.querySelector('.upvote-count');
       const downvoteCount = post.querySelector('.downvote-count');
-      if (downvoteCount) {
-        downvoteCount.textContent = result.downvotes;
+
+      // Update vote counts
+      if (upvoteCount) upvoteCount.textContent = result.upvotes;
+      if (downvoteCount) downvoteCount.textContent = result.downvotes;
+
+      // Update button states
+      if (result.userVote === 'down') {
+        downvoteBtn.classList.add('voted');
+        upvoteBtn.classList.remove('voted');
+      } else {
+        downvoteBtn.classList.remove('voted');
       }
     }
   } catch (error) {

@@ -554,6 +554,18 @@ body {
   color: #f44336;
 }
 
+.upvote-btn.voted {
+  background-color: #e8f5e9;
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.downvote-btn.voted {
+  background-color: #ffebee;
+  border-color: #f44336;
+  color: #f44336;
+}
+
 .upvote-count,
 .downvote-count {
   font-weight: 500;

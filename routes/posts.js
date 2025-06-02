@@ -68,10 +68,30 @@ router.get("/", async (req, res) => {
   try {
     const posts = await req.models.Post.find()
       .populate("author", "username")
-      .populate("comments.author", "username")
-      .sort({ createdAt: -1 });
-    console.log("Found posts:", posts);
-    res.json(posts);
+      .populate("comments.author", "username");
+
+    // If user is logged in, include their vote status for each post
+    let userVotes = {};
+    if (req.session.isAuthenticated) {
+      const username = req.session.account.username;
+      const user = await req.models.User.findOne({ email: username });
+      if (user) {
+        posts.forEach(post => {
+          if (post.upvotedBy.includes(user._id)) {
+            userVotes[post._id] = 'up';
+          } else if (post.downvotedBy.includes(user._id)) {
+            userVotes[post._id] = 'down';
+          }
+        });
+      }
+    }
+
+    const postsWithVotes = posts.map(post => ({
+      ...post.toObject(),
+      userVote: userVotes[post._id] || null
+    }));
+
+    res.json(postsWithVotes);
   } catch (error) {
     console.error("Error fetching posts:", error);
     res.status(500).json({ status: "error", error: error.message });
@@ -230,15 +250,48 @@ router.post("/:postId/upvote", async (req, res) => {
   }
 
   try {
+    // Get the current user
+    const username = req.session.account.username;
+    let user = await req.models.User.findOne({ email: username });
+    if (!user) {
+      user = await req.models.User.create({
+        username: username,
+        email: username,
+      });
+    }
+
     const post = await req.models.Post.findById(req.params.postId);
     if (!post) {
       return res.status(404).json({ status: "error", error: "Post not found" });
     }
 
-    post.upvotes = (post.upvotes || 0) + 1;
+    // Check if user has already voted
+    const hasUpvoted = post.upvotedBy.includes(user._id);
+    const hasDownvoted = post.downvotedBy.includes(user._id);
+
+    if (hasUpvoted) {
+      // Remove upvote
+      post.upvotes = Math.max(0, post.upvotes - 1);
+      post.upvotedBy = post.upvotedBy.filter(id => !id.equals(user._id));
+    } else {
+      // Add upvote
+      if (hasDownvoted) {
+        // Remove downvote first
+        post.downvotes = Math.max(0, post.downvotes - 1);
+        post.downvotedBy = post.downvotedBy.filter(id => !id.equals(user._id));
+      }
+      post.upvotes = (post.upvotes || 0) + 1;
+      post.upvotedBy.push(user._id);
+    }
+
     await post.save();
 
-    res.json({ status: "success", upvotes: post.upvotes });
+    res.json({ 
+      status: "success", 
+      upvotes: post.upvotes, 
+      downvotes: post.downvotes,
+      userVote: hasUpvoted ? null : 'up'  // Tell client if user has voted
+    });
   } catch (error) {
     console.error("Error upvoting post:", error);
     res.status(500).json({ status: "error", error: error.message });
@@ -255,15 +308,48 @@ router.post("/:postId/downvote", async (req, res) => {
   }
 
   try {
+    // Get the current user
+    const username = req.session.account.username;
+    let user = await req.models.User.findOne({ email: username });
+    if (!user) {
+      user = await req.models.User.create({
+        username: username,
+        email: username,
+      });
+    }
+
     const post = await req.models.Post.findById(req.params.postId);
     if (!post) {
       return res.status(404).json({ status: "error", error: "Post not found" });
     }
 
-    post.downvotes = (post.downvotes || 0) + 1;
+    // Check if user has already voted
+    const hasUpvoted = post.upvotedBy.includes(user._id);
+    const hasDownvoted = post.downvotedBy.includes(user._id);
+
+    if (hasDownvoted) {
+      // Remove downvote
+      post.downvotes = Math.max(0, post.downvotes - 1);
+      post.downvotedBy = post.downvotedBy.filter(id => !id.equals(user._id));
+    } else {
+      // Add downvote
+      if (hasUpvoted) {
+        // Remove upvote first
+        post.upvotes = Math.max(0, post.upvotes - 1);
+        post.upvotedBy = post.upvotedBy.filter(id => !id.equals(user._id));
+      }
+      post.downvotes = (post.downvotes || 0) + 1;
+      post.downvotedBy.push(user._id);
+    }
+
     await post.save();
 
-    res.json({ status: "success", downvotes: post.downvotes });
+    res.json({ 
+      status: "success", 
+      upvotes: post.upvotes, 
+      downvotes: post.downvotes,
+      userVote: hasDownvoted ? null : 'down'  // Tell client if user has voted
+    });
   } catch (error) {
     console.error("Error downvoting post:", error);
     res.status(500).json({ status: "error", error: error.message });
