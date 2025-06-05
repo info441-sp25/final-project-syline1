@@ -39,7 +39,7 @@
         <label>Profile Picture</label>
         <input type="file" id="profilePicture" name="profilePicture" accept="image/*" />
 
-        <button id="save-changes-btn" class="edit-btn">Save Changes</button>
+        <button type="submit" id="save-changes-btn" class="edit-btn">Save Changes</button>
       </form>
     </div>
 
@@ -85,7 +85,7 @@
       window.location.href = "/signout";
     });
 
-    document.getElementById("save-changes-btn").addEventListener("click", async (e) => {
+    document.getElementById("profile-form").addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const form = document.getElementById("profile-form");
@@ -100,13 +100,11 @@
 
         const data = await res.json();
         if (data.success) {
-          // Update the profile picture on the account page
           const profilePic = document.getElementById("profile-pic");
           if (data.profilePicture) {
             profilePic.src = data.profilePicture;
           }
-          
-          // Update the profile picture in the navigation bar
+
           const accountBtn = document.getElementById("account-btn");
           if (accountBtn) {
             if (data.profilePicture) {
@@ -115,13 +113,14 @@
               accountBtn.innerHTML = `<div class="profile-circle"><img src="/project-user-icon.png" alt="User Icon" class="profile-pic" /></div>`;
             }
           }
-          
+
           alert("Profile updated!");
         } else {
           alert("Update failed: " + data.error);
         }
       } catch (err) {
         console.error("Update error:", err);
+        alert("Something went wrong.");
       }
     });
 

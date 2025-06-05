@@ -44,6 +44,9 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 app.use('/uploads', express.static('uploads'));
 
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
+
+
 app.use((req, res, next) => {
   req.models = models;
   next();

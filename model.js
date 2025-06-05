@@ -10,13 +10,19 @@ await mongoose.connect(
 console.log("successfully connected to mongodb!");
 
 // User Schema
-const userSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
+  // existing fields
   username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  createdAt: { type: Date, default: Date.now },
+  email: String,
+  name: String,
+  dateOfBirth: String,
+
+  // Add this field
+  profilePicture: String
 });
 
-models.User = mongoose.model("User", userSchema);
+
+models.User = mongoose.model("User", UserSchema);
 // Post Schema
 const postSchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

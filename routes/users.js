@@ -1,14 +1,36 @@
 import express from "express";
-import multer from 'multer';
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+import models from "../model.js"; // make sure this path matches your project layout
 
-const upload = multer({ dest: 'uploads/' }); // Save uploaded files temporarily
-var router = express.Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const router = express.Router();
 
-/* GET users listing. */
-router.get("/", function (req, res, next) {
+// === Multer setup for file uploads ===
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "../public/uploads"));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    const safeName = req.session.account?.username || "user";
+    cb(null, safeName + "-" + uniqueSuffix + ext);
+  },
+});
+const upload = multer({ storage });
+
+
+// === GET /users ===
+router.get("/", (req, res) => {
   res.send("respond with a resource");
 });
 
+// === GET /users/auth-status ===
 router.get("/auth-status", (req, res) => {
   res.json({
     isAuthenticated: !!req.session.isAuthenticated,
@@ -18,79 +40,74 @@ router.get("/auth-status", (req, res) => {
   });
 });
 
-router.get('/me', async (req, res) => {
+// === GET /users/me ===
+router.get("/me", async (req, res) => {
   try {
-    if (!req.session.account || !req.session.account.email) {
-      return res.status(401).json({ error: 'Not authenticated' });
+    if (!req.session.account?.email) {
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const user = await req.models.User.findOne({ email: req.session.account.email });
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    const user = await models.User.findOne({ email: req.session.account.email });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const posts = await req.models.Post.find({
+    const posts = await models.Post.find({
       author: user._id,
-      createdAt: { $gte: oneDayAgo }
+      createdAt: { $gte: oneDayAgo },
     }).sort({ createdAt: -1 });
 
     res.json({
       user: {
         username: user.username,
         email: user.email,
-        dateOfBirth: user.dateOfBirth || '',
-        name: user.name || '',
-        profilePicture: user.profilePicture || null
+        dateOfBirth: user.dateOfBirth || "",
+        name: user.name || "",
+        profilePicture: user.profilePicture || null,
       },
-      posts
+      posts,
     });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-// POST route to update profile (name, DOB, profile pic)
-router.post('/update-profile', upload.single('profilePicture'), async (req, res) => {
+// === POST /users/update-profile ===
+router.post("/update-profile", upload.single("profilePicture"), async (req, res) => {
   try {
-    if (!req.session.account || !req.session.account.username) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
+    const accountEmail = req.session.account?.email;
+    if (!accountEmail) return res.status(401).json({ error: "Not authenticated" });
 
-    const user = await req.models.User.findOne({ username: req.session.account.username });
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    const user = await models.User.findOne({ email: accountEmail });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    if (req.body.name) user.name = req.body.name;
-    if (req.body.dateOfBirth) user.dateOfBirth = req.body.dateOfBirth;
+    user.name = req.body.name || user.name;
+    user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
 
     if (req.file) {
-      // Delete old profile picture if it exists
-      if (user.profilePicture) {
-        const oldFilePath = path.join(process.cwd(), 'public', user.profilePicture);
-        if (fs.existsSync(oldFilePath)) {
-          fs.unlinkSync(oldFilePath);
-        }
-      }
-
-      // Save new profile picture path
       const profilePicPath = `/uploads/${req.file.filename}`;
       user.profilePicture = profilePicPath;
       req.session.account.profilePicture = profilePicPath;
     }
 
     await user.save();
-    res.json({ 
+
+    res.json({
       success: true,
-      profilePicture: user.profilePicture
+      profilePicture: user.profilePicture,
     });
   } catch (err) {
-    console.error(err);
-    // If there was an error and a file was uploaded, delete it
+    console.error("Profile update failed:", err);
+
+    // Optional cleanup: remove file on error
     if (req.file) {
-      const filePath = path.join(process.cwd(), 'public', req.file.path);
+      const filePath = path.join(__dirname, "../public/uploads", req.file.filename);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
     }
-    res.status(500).json({ error: err.message });
+
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
