@@ -3,6 +3,7 @@
 **Team Members:** Shaaz Charania, Sophia Ylinen, Jia Wu, Taise Nish  
 **Project Type:** Microblogging Web App  
 **Deployment:** Azure  
+**Azure Link** https://441final.shaazcharania.me
 
 ---
 
