@@ -66,14 +66,57 @@ app.use(sessions({
 const authProvider = await WebAppAuthProvider.WebAppAuthProvider.initialize(authConfig);
 app.use(authProvider.authenticate());
 
-app.use((req, res, next) => {
+// Enhanced user session handling with database sync
+app.use(async (req, res, next) => {
   const claims = req.session.account?.idTokenClaims;
   if (claims) {
-    req.session.account.username = claims.preferred_username || claims.name;
-    req.session.account.email = claims.email || claims.preferred_username;
-    req.session.account.name = claims.name;
-    req.session.account.profilePicture = req.session.account.profilePicture || null;
-    req.session.save();
+    const username = claims.preferred_username || claims.name;
+    const email = claims.email || claims.preferred_username;
+    const name = claims.name;
+
+    try {
+      // Find or create user in database
+      let user = await models.User.findOne({ email: email });
+      
+      if (!user) {
+        // Create new user if doesn't exist
+        user = new models.User({
+          username: username,
+          email: email,
+          name: name,
+          profilePicture: null
+        });
+        await user.save();
+        console.log(`Created new user: ${username}`);
+      } else {
+        // Update existing user info (but preserve profile picture)
+        user.username = username;
+        user.name = name;
+        await user.save();
+      }
+
+      // Set up session with database data
+      req.session.account = {
+        username: username,
+        email: email,
+        name: name,
+        profilePicture: user.profilePicture || null,
+        idTokenClaims: claims
+      };
+      
+      req.session.save();
+    } catch (error) {
+      console.error('Error syncing user with database:', error);
+      // Fallback to basic session setup
+      req.session.account = {
+        username: username,
+        email: email,
+        name: name,
+        profilePicture: null,
+        idTokenClaims: claims
+      };
+      req.session.save();
+    }
   }
   next();
 });

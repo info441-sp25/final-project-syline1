@@ -1,6 +1,4 @@
 // Authentication functions
-// async function checkAuth() { ... }
-
 async function signOut() {
   try {
     await fetch("/signout");
@@ -123,10 +121,8 @@ async function downvotePost(postId) {
 function renderPosts(posts) {
   const feedContainer = document.getElementById("feed");
   if (!feedContainer) return;
-  // Sort posts by creation date (newest first)
   posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  feedContainer.innerHTML = ""; // Clear existing posts
-
+  feedContainer.innerHTML = "";
   posts.forEach((post) => {
     const postElement = createPostElement(post);
     feedContainer.appendChild(postElement);
@@ -138,12 +134,12 @@ function createPostElement(post) {
   postElement.className = "post";
   postElement.dataset.postId = post._id;
   postElement.dataset.createdAt = post.createdAt;
-  
+
   const contentWithHighlightedHashtags = post.content.replace(
     /#[\w]+/g,
     match => `<span class="hashtag">${match}</span>`
   );
-  
+
   postElement.innerHTML = `
     <div class="post-header">
       <span class="post-author">${post.author.username}</span>
@@ -188,7 +184,6 @@ async function handlePostSubmit(event) {
   event.preventDefault();
   const contentInput = document.getElementById("post-content");
   const content = contentInput.value.trim();
-
   if (!content) return;
 
   try {
@@ -217,39 +212,7 @@ function showError(message) {
   setTimeout(() => errorDiv.remove(), 5000);
 }
 
-// Initialize
-async function initialize() {
-  const postForm = document.getElementById("post-form");
-  if (postForm) {
-    postForm.addEventListener("submit", handlePostSubmit);
-  }
-
-  const signOutBtn = document.getElementById("signout-btn");
-  if (signOutBtn) {
-    signOutBtn.addEventListener("click", signOut);
-  }
-
-  await Promise.all([
-    loadPosts(),
-    loadTrendingHashtags()
-  ]);
-  
-  startPeriodicRefresh();
-}
-
-document.addEventListener("DOMContentLoaded", initialize);
-
-function signIn() {
-  window.location.href = "/signin";
-}
-
-document.getElementById("signin-btn")?.addEventListener("click", () => {
-  window.location.href = "/signin";
-});
-document.getElementById("signout-btn")?.addEventListener("click", () => {
-  window.location.href = "/signout";
-});
-
+// Enhanced Authentication UI with proper profile picture handling
 async function updateAuthUI() {
   try {
     const res = await fetch("/users/auth-status", { credentials: "include" });
@@ -257,21 +220,87 @@ async function updateAuthUI() {
 
     const signInBtn = document.getElementById("signin-btn");
     const signOutBtn = document.getElementById("signout-btn");
+    const accountBtn = document.getElementById("account-btn");
 
     if (data.isAuthenticated) {
+      // Hide sign in, show sign out
       if (signInBtn) signInBtn.style.display = "none";
       if (signOutBtn) signOutBtn.style.display = "inline-block";
+      
+      // Show and update account button with profile picture
+      if (accountBtn) {
+        accountBtn.style.display = "inline-block";
+        updateProfilePicture(accountBtn, data.profilePicture);
+      }
     } else {
+      // Show sign in, hide sign out and account button
       if (signInBtn) signInBtn.style.display = "inline-block";
       if (signOutBtn) signOutBtn.style.display = "none";
+      if (accountBtn) accountBtn.style.display = "none";
     }
   } catch (err) {
     console.error("Failed to check auth status:", err);
   }
 }
 
-document.addEventListener("DOMContentLoaded", updateAuthUI);
+// Helper function to update profile picture display
+function updateProfilePicture(container, profilePicturePath) {
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  const profileCircle = document.createElement("div");
+  profileCircle.className = "profile-circle";
+  
+  const img = document.createElement("img");
+  img.className = "profile-pic";
+  img.alt = "Profile Picture";
+  
+  // Handle profile picture source
+  if (profilePicturePath && profilePicturePath.trim() !== '') {
+    // Add cache busting to ensure fresh image load
+    img.src = `${profilePicturePath}?t=${Date.now()}`;
+    img.onerror = function() {
+      // Fallback to default if image fails to load
+      console.warn('Profile picture failed to load, using default');
+      this.src = "/project-user-icon.png";
+      profileCircle.classList.add("default");
+    };
+  } else {
+    // Use default image
+    img.src = "/project-user-icon.png";
+    profileCircle.classList.add("default");
+  }
+  
+  profileCircle.appendChild(img);
+  container.appendChild(profileCircle);
+}
 
+// Account Icon loading with enhanced error handling
+async function loadAccountIcon() {
+  try {
+    const res = await fetch("/users/auth-status", { credentials: "include" });
+    const data = await res.json();
+
+    const accountBtn = document.getElementById("account-btn");
+    if (!accountBtn) return;
+
+    if (data.isAuthenticated) {
+      accountBtn.style.display = "inline-block";
+      updateProfilePicture(accountBtn, data.profilePicture);
+    } else {
+      accountBtn.style.display = "none";
+    }
+  } catch (err) {
+    console.error("Error loading account icon:", err);
+    const accountBtn = document.getElementById("account-btn");
+    if (accountBtn) {
+      accountBtn.style.display = "none";
+    }
+  }
+}
+
+// Trending hashtags functions
 async function fetchTrendingHashtags() {
   try {
     const response = await fetch("/posts/trending");
@@ -281,13 +310,23 @@ async function fetchTrendingHashtags() {
     return await response.json();
   } catch (error) {
     console.error("Error fetching trending hashtags:", error);
-    throw error;
+    return [];
   }
 }
 
 function renderTrendingHashtags(hashtags) {
   const trendingContainer = document.getElementById("trending-hashtags");
   if (!trendingContainer) return;
+
+  if (hashtags.length === 0) {
+    trendingContainer.innerHTML = `
+      <h3>Trending Hashtags</h3>
+      <div class="hashtag-list">
+        <span>No trending hashtags yet</span>
+      </div>
+    `;
+    return;
+  }
 
   trendingContainer.innerHTML = `
     <h3>Trending Hashtags</h3>
@@ -301,120 +340,89 @@ function renderTrendingHashtags(hashtags) {
   `;
 }
 
-async function loadPostsByHashtag(tag) {
-  try {
-    const response = await fetch(`/posts/hashtag/${tag}`);
-    if (!response.ok) {
-      throw new Error("Failed to fetch posts by hashtag");
-    }
-    const posts = await response.json();
-    renderPosts(posts);
-  } catch (error) {
-    showError("Failed to load posts by hashtag: " + error.message);
-  }
-}
-
 async function loadTrendingHashtags() {
   try {
     const hashtags = await fetchTrendingHashtags();
     renderTrendingHashtags(hashtags);
   } catch (error) {
-    showError("Failed to load trending hashtags: " + error.message);
+    console.error("Failed to load trending hashtags:", error);
+    renderTrendingHashtags([]); // Show empty state
   }
 }
 
+// Periodic refresh
 function startPeriodicRefresh() {
   setInterval(async () => {
     await Promise.all([
       loadPosts(),
-      loadTrendingHashtags()
+      loadTrendingHashtags(),
+      updateAuthUI() // Also refresh auth UI to catch profile picture updates
     ]);
   }, 60000);
 }
 
-//  Account Button Logic ===
-async function loadAccountIcon() {
+// Global handlers for voting and comments
+window.handleUpvote = async function(postId) {
   try {
-    const res = await fetch("/users/auth-status", { credentials: "include" });
-    const data = await res.json();
-
-    const accountBtn = document.getElementById("account-btn");
-    if (!accountBtn) return;
-
-    if (data.isAuthenticated) {
-      if (data.profilePicture) {
-        accountBtn.innerHTML = `<div class="profile-circle"><img src="${data.profilePicture}" alt="Profile Picture" class="profile-pic" /></div>`;
-      } else {
-        accountBtn.innerHTML = `<div class="profile-circle"><img src="/project-user-icon.png" alt="User Icon" class="profile-pic" /></div>`;
-      }
-      accountBtn.style.display = "inline-block";
-    } else {
-      accountBtn.style.display = "none";
-    }
-  } catch (err) {
-    console.error("Error loading account icon:", err);
-  }
-}
-
-document.addEventListener("DOMContentLoaded", loadAccountIcon);
-
-// Event handlers for the new features
-async function handleUpvote(postId) {
-  try {
-    const result = await upvotePost(postId);
-    const post = document.querySelector(`[data-post-id="${postId}"]`);
-    if (post) {
-      const upvoteCount = post.querySelector('.upvote-count');
-      if (upvoteCount) {
-        upvoteCount.textContent = result.upvotes;
-      }
-    }
+    await upvotePost(postId);
+    await loadPosts(); // Refresh posts to show updated vote counts
   } catch (error) {
     showError("Failed to upvote: " + error.message);
   }
-}
+};
 
-async function handleDownvote(postId) {
+window.handleDownvote = async function(postId) {
   try {
-    const result = await downvotePost(postId);
-    const post = document.querySelector(`[data-post-id="${postId}"]`);
-    if (post) {
-      const downvoteCount = post.querySelector('.downvote-count');
-      if (downvoteCount) {
-        downvoteCount.textContent = result.downvotes;
-      }
-    }
+    await downvotePost(postId);
+    await loadPosts(); // Refresh posts to show updated vote counts
   } catch (error) {
     showError("Failed to downvote: " + error.message);
   }
-}
+};
 
-async function handleAddComment(postId, inputElement) {
-  const content = inputElement.value.trim();
-  if (!content) return;
-
+window.handleAddComment = async function(postId, inputElement) {
   try {
-    const result = await addComment(postId, content);
-    inputElement.value = "";
+    const content = inputElement.value.trim();
+    if (!content) return;
     
-    // Add the new comment to the UI
-    const commentsSection = inputElement.closest('.comments-section').querySelector('.comments-list');
-    const commentElement = createCommentElement(result.comment);
-    commentsSection.appendChild(commentElement);
+    await addComment(postId, content);
+    inputElement.value = '';
+    await loadPosts(); // Refresh posts to show new comment
   } catch (error) {
     showError("Failed to add comment: " + error.message);
   }
+};
+
+// Enhanced initialization
+async function initialize() {
+  const postForm = document.getElementById("post-form");
+  if (postForm) {
+    postForm.addEventListener("submit", handlePostSubmit);
+  }
+
+  const signOutBtn = document.getElementById("signout-btn");
+  if (signOutBtn) {
+    signOutBtn.addEventListener("click", signOut);
+  }
+
+  // Initialize all components
+  await Promise.all([
+    loadPosts(),
+    loadTrendingHashtags(),
+    updateAuthUI(),
+    loadAccountIcon(),
+  ]);
+
+  startPeriodicRefresh();
 }
 
-function createCommentElement(comment) {
-  const commentElement = document.createElement("div");
-  commentElement.className = "comment";
-  commentElement.innerHTML = `
-    <div class="comment-header">
-      <span class="comment-author">${comment.author.username}</span>
-      <span class="comment-time">${new Date(comment.timestamp).toLocaleString()}</span>
-    </div>
-    <div class="comment-content">${comment.content}</div>
-  `;
-  return commentElement;
-}
+// Event listeners
+document.addEventListener("DOMContentLoaded", initialize);
+
+document.getElementById("signin-btn")?.addEventListener("click", () => {
+  window.location.href = "/signin";
+});
+
+document.getElementById("signout-btn")?.addEventListener("click", () => {
+  window.location.href = "/signout";
+});

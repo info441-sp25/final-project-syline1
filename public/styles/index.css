@@ -514,6 +514,20 @@ nav .btn-secondary:hover {
   object-fit: contain;
   filter: invert(0.4);
 }
+#profile-icon-container {
+  position: absolute;
+  top: 20px;
+  right: 80px;
+}
+
+#profile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
 
 body {
   background: #f0f4fa;

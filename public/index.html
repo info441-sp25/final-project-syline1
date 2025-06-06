@@ -20,29 +20,11 @@
             everything they share is temporary.
           </div>
         </div>
-        <nav>
-          <a
-            href="/account.html"
-            class="btn btn-secondary"
-            id="account-btn"
-            style="display: none"
-            >Account</a
-          >
-          <a
-            href="/signin"
-            class="btn btn-primary"
-            id="signin-btn"
-            style="display: none"
-            >Sign In</a
-          >
-          <a
-            href="/signout"
-            class="btn btn-danger"
-            id="signout-btn"
-            style="display: none"
-            >Sign Out</a
-          >
-        </nav>
+        <nav class="navbar-right">
+          <a href="/account.html" id="account-btn" class="account-icon" style="display: none;"></a>
+          <a href="/signin" class="btn btn-primary" id="signin-btn" style="display: none">Sign In</a>
+          <a href="/signout" class="btn btn-danger" id="signout-btn" style="display: none">Sign Out</a>
+        </nav>        
       </header>
 
       <!-- Post Creation Form -->
@@ -66,5 +48,29 @@
 
     <!-- Scripts -->
     <script src="/javascripts/index.js"></script>
+    <script>
+      fetch("/users/auth-status", { credentials: "include" })
+        .then(res => res.json())
+        .then(data => {
+          if (data.isAuthenticated) {
+            document.getElementById("signin-btn").style.display = "none";
+            document.getElementById("signout-btn").style.display = "inline-block";
+            const accountBtn = document.getElementById("account-btn");
+            accountBtn.style.display = "inline-block";
+
+            if (data.profilePicture) {
+              accountBtn.innerHTML = `<div class="profile-circle"><img src="${data.profilePicture}" alt="Profile Picture" class="profile-pic" /></div>`;
+            } else {
+              accountBtn.innerHTML = `<div class="profile-circle"><img src="/project-user-icon.png" alt="User Icon" class="profile-pic" /></div>`;
+            }
+          } else {
+            document.getElementById("signin-btn").style.display = "inline-block";
+            document.getElementById("signout-btn").style.display = "none";
+          }
+        })
+        .catch(err => {
+          console.error("Auth status fetch failed:", err);
+        });
+    </script>
   </body>
 </html>
